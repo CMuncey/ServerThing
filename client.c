@@ -6,39 +6,38 @@
 #include "sockettome.h"
 
 #define MIN(x, y) ((x < y) ? x : y)
-#define PACKET_SIZE 8192
+#define PACKET_SIZE 1024
 #define FILENAME_SIZE 1024
 
 int main(int argc, char** argv)
 {
     uint8_t* data;
     FILE*    input;
-    FILE*    fin;
     char*    filename;
-    int      port, socket, fd, fd2;
+    int      port, socket, fd, size;
     int      count, filesize, temp;
 
     /* Error check */
     if(argc != 3)
     {
-        fprintf(stderr, "Usage: Client hostname port\n");
+        fprintf(stderr, "Usage: betterCP_C hostname port\n");
         exit(1);
     }
 
     port = atoi(argv[2]);
     if(port < 8000)
     {
-        fprintf(stderr, "Usage: Client hostname port\n");
+        fprintf(stderr, "Usage: betterCP_C hostname port\n");
         fprintf(stderr, "       port must be >= 8000\n");
         exit(1);
     }
 
-    /* Request connection, open fin */
+    /* Connect to the server */
     fd   = request_connection(argv[1], port);
-    fin  = fdopen(fd, "r");
+    filename = malloc(FILENAME_SIZE);
 
     /* Read file, get filesize */
-    filename = malloc(1024);
+    printf("File to transfer: ");
     fgets(filename, FILENAME_SIZE, stdin);
     filename[sizeof(filename)-1] = '\0';
     input = fopen(filename, "rb");
@@ -52,23 +51,32 @@ int main(int argc, char** argv)
     filesize = ftell(input);
     fseek(input, 0, SEEK_SET);
 
-    /* Send name and size, malloc data */
+    /* Send name and size, malloc data, sleep to let server catch up */
     printf("Filename: %s\n", filename);
     printf("Filsize:  %d\n", filesize);
     write(fd, filename, FILENAME_SIZE);
     write(fd, &filesize, sizeof(int));
     data = malloc(PACKET_SIZE);
+    sleep(1);
 
-    /* Write file PACKET_SIZE bytes at a time */
+    /* write file PACKET_SIZE bytes at a time */
     for(count = filesize; count > 0; count -= PACKET_SIZE)
     {
-        temp = MIN(count, PACKET_SIZE);
-        fread(data, temp, 1, input);
-        write(fd, data, temp);
+        port = temp = MIN(count, PACKET_SIZE);
+        fread(data, port, 1, input);
+        while(temp != 0)
+        {
+            write(fd, data + (port - temp), temp);
+            read(fd, &size, sizeof(int));
+            temp -= size;
+            if(size != PACKET_SIZE)
+                printf("Sent %d bytes\n", size);
+        }
     }
+    count = (count < 0) ? 0 : count;
+    printf("Sent %d/%d bytes\n", filesize - count, filesize);
 
     free(data); 
-    fclose(fin);
     free(filename);
     return(0);
 }
