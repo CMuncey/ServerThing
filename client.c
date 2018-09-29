@@ -39,9 +39,7 @@ int main(int argc, char** argv)
     /* Read file, get filesize */
     printf("File to transfer: ");
     fgets(filename, FILENAME_SIZE, stdin);
-    printf("You said: %s\n", filename);
     filename[sizeof(filename)] = '\0';
-    printf("You said: %s\n", filename);
     input = fopen(filename, "rb");
     if(input == NULL)
     {
