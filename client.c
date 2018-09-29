@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     }
 
     /* Connect to the server */
-    fd   = request_connection(argv[1], port);
+    fd = request_connection(argv[1], port);
     filename = malloc(FILENAME_SIZE);
 
     /* Read file, get filesize */
