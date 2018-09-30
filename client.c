@@ -15,7 +15,7 @@ int main(int argc, char** argv)
     FILE*    input;
     char*    filename;
     int      port, socket, fd, size;
-    int      count, filesize, temp;
+    int      count, filesize, temp, i;
 
     /* Error check */
     if(argc != 3)
@@ -39,7 +39,9 @@ int main(int argc, char** argv)
     /* Read file, get filesize */
     printf("File to transfer: ");
     fgets(filename, FILENAME_SIZE, stdin);
-    filename[sizeof(filename)] = '\0';
+    for(i = strlen(filename); i > 0; i--)
+        if(filename[i] == '\n')
+            filename[i] = '\0';
     input = fopen(filename, "rb");
     if(input == NULL)
     {
@@ -52,7 +54,6 @@ int main(int argc, char** argv)
     fseek(input, 0, SEEK_SET);
 
     /* Send name and size, malloc data, sleep to let server catch up */
-    printf("Filename: %s\n", filename);
     printf("Filsize:  %d\n", filesize);
     write(fd, filename, FILENAME_SIZE);
     write(fd, &filesize, sizeof(int));
